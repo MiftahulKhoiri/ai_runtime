@@ -1,13 +1,11 @@
 import os
 import sys
 import subprocess
-import zipfile
-import requests
 from pathlib import Path
 
 from core.logger import get_logger
-# SelfUpdater OPSIONAL, boleh dihapus kalau belum dipakai
-# from core.update import SelfUpdater
+from core.model_downloader import download_latest_model
+# from core.update import SelfUpdater  # OPSIONAL
 
 log = get_logger("AI_RUNTIME_BOOTSTRAP")
 
@@ -18,11 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 VENV_DIR = BASE_DIR / "venv"
 REQ_FILE = BASE_DIR / "requirements.txt"
 
-MODEL_DIR = BASE_DIR / "model" / "training"
-MODEL_ZIP = BASE_DIR / "model.zip"
-
-# URL MODEL DARI ai_factory (nanti kamu ganti real URL)
-MODEL_URL = "https://example.com/ai_factory/model_latest.zip"
+MODEL_DIR = BASE_DIR / "model" / "current"
 
 # ===============================
 # VIRTUAL ENV
@@ -50,48 +44,30 @@ def install_requirements():
     log.info("Memastikan dependency terinstall...")
 
     pip_bin = VENV_DIR / "bin" / "pip"
-    subprocess.check_call(
-        [
-            str(pip_bin),
-            "install",
-            "--upgrade",
-            "-r",
-            str(REQ_FILE),
-        ]
-    )
+    subprocess.check_call([
+        str(pip_bin),
+        "install",
+        "--upgrade",
+        "-r",
+        str(REQ_FILE),
+    ])
 
     log.info("Dependency siap")
 
 
 # ===============================
-# MODEL DOWNLOAD
+# MODEL VALIDATION
 # ===============================
-def download_model():
-    log.warning("Model belum ada, mengunduh dari ai_factory...")
-
-    MODEL_DIR.parent.mkdir(parents=True, exist_ok=True)
-
-    r = requests.get(MODEL_URL, stream=True, timeout=60)
-    r.raise_for_status()
-
-    with open(MODEL_ZIP, "wb") as f:
-        for chunk in r.iter_content(chunk_size=8192):
-            f.write(chunk)
-
-    MODEL_DIR.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(MODEL_ZIP, "r") as z:
-        z.extractall(MODEL_DIR)
-
-    MODEL_ZIP.unlink()
-    log.info("Model berhasil diunduh dan diekstrak")
-
-
-def validate_model():
+def validate_model() -> bool:
     if not MODEL_DIR.exists():
         return False
 
-    # validasi minimal model transformers
-    required = ["config.json", "pytorch_model.bin", "tokenizer.json"]
+    required = [
+        "config.json",
+        "pytorch_model.bin",
+        "tokenizer.json"
+    ]
+
     for f in required:
         if not (MODEL_DIR / f).exists():
             log.error(f"File model hilang: {f}")
@@ -122,17 +98,16 @@ def bootstrap():
     # ===============================
     # 3. Auto update (OPSIONAL)
     # ===============================
-    
-    updater = SelfUpdater(repo_dir=str(BASE_DIR))
-    if updater.update_if_needed():
-        log.warning("Restart setelah update...")
-        restart_in_venv()
-    
+    # updater = SelfUpdater(repo_dir=str(BASE_DIR))
+    # if updater.update_if_needed():
+    #     log.warning("Restart setelah update...")
+    #     restart_in_venv()
 
     # ===============================
-    # 4. MODEL
+    # 4. MODEL (PAKAI DOWNLOADER)
     # ===============================
     if not validate_model():
-        download_model()
+        log.warning("Model belum ada / tidak valid, sinkronisasi dengan ai_factory...")
+        download_latest_model()
     else:
-        log.info("Model tersedia, lanjut inference")
+        log.info("Model valid, siap inference")
