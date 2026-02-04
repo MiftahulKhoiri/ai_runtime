@@ -122,12 +122,12 @@ def bootstrap():
     # ===============================
     # 3. Auto update (OPSIONAL)
     # ===============================
-    """
+    
     updater = SelfUpdater(repo_dir=str(BASE_DIR))
     if updater.update_if_needed():
         log.warning("Restart setelah update...")
         restart_in_venv()
-    """
+    
 
     # ===============================
     # 4. MODEL
