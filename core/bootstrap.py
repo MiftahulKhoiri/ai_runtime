@@ -5,7 +5,7 @@ from pathlib import Path
 
 from core.logger import get_logger
 from core.model_downloader import download_latest_model
-# from core.update import SelfUpdater  # OPSIONAL
+from core.update import SelfUpdater
 
 log = get_logger("AI_RUNTIME_BOOTSTRAP")
 
@@ -98,10 +98,10 @@ def bootstrap():
     # ===============================
     # 3. Auto update (OPSIONAL)
     # ===============================
-    # updater = SelfUpdater(repo_dir=str(BASE_DIR))
-    # if updater.update_if_needed():
-    #     log.warning("Restart setelah update...")
-    #     restart_in_venv()
+    updater = SelfUpdater(repo_dir=str(BASE_DIR))
+    if updater.update_if_needed():
+        log.warning("Restart setelah update...")
+         restart_in_venv()
 
     # ===============================
     # 4. MODEL (PAKAI DOWNLOADER)
