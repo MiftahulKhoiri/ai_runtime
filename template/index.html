@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Chat</title>
+
+    <!-- MOBILE FIRST -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="manifest" href="/static/json/manifest.json">
+<meta name="theme-color" content="#075e54">
+</head>
+<body>
+
+<div class="chat-app">
+
+    <!-- HEADER -->
+    <div class="chat-header">
+        🤖 AI Chat Assistant
+    </div>
+
+    <!-- CHAT AREA -->
+    <div id="chat-box" class="chat-box">
+        <div class="message ai">
+            "Halo selamat datang kembali, saya adalah asisten AI siap membantu. apakah ada yang ingin di tanyakan Silahkan bertanya.
+        </div>
+    </div>
+
+    <!-- INPUT BAR -->
+    <div class="chat-input">
+        <textarea
+            id="user-input"
+            placeholder="Ketik pesan..."
+            rows="1"
+            autocomplete="off"
+        ></textarea>
+        <button type="button" onclick="sendMessage()">➤</button>
+    </div>
+
+</div>
+
+<script src="/static/js/chat.js"></script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/static/js/service-worker.js");
+  });
+}
+</script>
+</body>
+</html>
