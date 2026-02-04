@@ -1,11 +1,14 @@
-from server.app import app
-from core.bootstrap import bootstrap
 import subprocess
 from pathlib import Path
 import socket
 import signal
 import sys
 
+from core.bootstrap import bootstrap
+
+# ===============================
+# PATH
+# ===============================
 BASE_DIR = Path(__file__).resolve().parent
 GUNICORN = BASE_DIR / "venv" / "bin" / "gunicorn"
 
@@ -23,23 +26,32 @@ def get_local_ip():
 
 
 def run():
+    # ===============================
+    # 1. BOOTSTRAP (venv, deps, model)
+    # ===============================
     bootstrap()
 
     ip = get_local_ip()
     print("=" * 48)
-    print(" # SERVER AI SUDAH AKTIF #")
-    print(" Bisa diakses melalui")
-    print(f" : http://{ip}:5000")
+    print(" 🚀 SERVER AI SUDAH AKTIF")
+    print(" Bisa diakses melalui:")
+    print(f" http://{ip}:5000")
     print("=" * 48)
 
-    # 🚀 Jalankan Gunicorn
-    proc = subprocess.Popen([
-        str(GUNICORN),
-        "app:app",
-        "--bind", "0.0.0.0:5000",
-        "--workers", "1",
-        "--timeout", "120"
-    ])
+    # ===============================
+    # 2. JALANKAN GUNICORN
+    # ===============================
+    proc = subprocess.Popen(
+        [
+            str(GUNICORN),
+            "server.app:app",   # 🔥 PATH YANG BENAR
+            "--bind", "0.0.0.0:5000",
+            "--workers", "1",   # Raspberry Pi → 1 worker
+            "--timeout", "120",
+            "--log-level", "info",
+        ],
+        cwd=str(BASE_DIR),
+    )
 
     try:
         proc.wait()
