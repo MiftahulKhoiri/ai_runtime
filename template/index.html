@@ -9,7 +9,7 @@
 
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="manifest" href="/static/json/manifest.json">
-<meta name="theme-color" content="#075e54">
+    <meta name="theme-color" content="#075e54">
 </head>
 <body>
 
@@ -23,8 +23,15 @@
     <!-- CHAT AREA -->
     <div id="chat-box" class="chat-box">
         <div class="message ai">
-            "Halo selamat datang kembali, saya adalah asisten AI siap membantu. apakah ada yang ingin di tanyakan Silahkan bertanya.
+            Halo 👋  
+            Saya adalah asisten AI siap membantu.  
+            Silakan ajukan pertanyaan apa pun.
         </div>
+    </div>
+
+    <!-- TYPING INDICATOR -->
+    <div id="typing" class="typing" style="display:none;">
+        AI sedang mengetik...
     </div>
 
     <!-- INPUT BAR -->
@@ -34,8 +41,13 @@
             placeholder="Ketik pesan..."
             rows="1"
             autocomplete="off"
+            aria-label="Input pesan"
         ></textarea>
-        <button type="button" onclick="sendMessage()">➤</button>
+        <button
+            type="button"
+            onclick="sendMessage()"
+            aria-label="Kirim pesan"
+        >➤</button>
     </div>
 
 </div>
@@ -49,5 +61,6 @@ if ("serviceWorker" in navigator) {
   });
 }
 </script>
+
 </body>
 </html>
