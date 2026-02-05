@@ -1,5 +1,4 @@
 from core.bootstrap import bootstrap
-bootstrap()
 
 """
 run_server.py
@@ -19,6 +18,7 @@ import sys
 import os
 
 from core.logger import get_logger
+from core.bootstrap import bootstrap
 
 log = get_logger("AI_RUNTIME_SERVER")
 
