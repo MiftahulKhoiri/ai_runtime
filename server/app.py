@@ -1,23 +1,45 @@
-from flask import Flask, request, jsonify
-import time
-from flask import render_template_string
+"""
+server/app.py
+Flask app ai_runtime (production-ready)
 
-from core.bootstrap import bootstrap
-from core.model_loader import load_model
-from core.chatbot import ChatBot
+Catatan:
+- Tidak ada bootstrap di import time
+- Model di-load lazy & reloadable
+- Aman untuk Gunicorn
+"""
+
+import time
+from flask import Flask, request, jsonify
 from core.logger import get_logger
+from core.model_loader import load_model
+from core.model_downloader import download_latest_model
+from core.chatbot import ChatBot
 
 log = get_logger("AI_SERVER")
 
-# ===============================
-# BOOTSTRAP SEKALI SAJA
-# ===============================
-bootstrap()
-
-tokenizer, model = load_model()
-bot = ChatBot(tokenizer, model)
-
 app = Flask(__name__)
+
+# ===============================
+# RUNTIME STATE (GLOBAL TERKONTROL)
+# ===============================
+_tokenizer = None
+_model = None
+_device = None
+_bot: ChatBot | None = None
+
+
+def get_bot() -> ChatBot:
+    """
+    Lazy load chatbot (aman untuk Gunicorn)
+    """
+    global _tokenizer, _model, _device, _bot
+
+    if _bot is None:
+        log.info("Memuat model & chatbot runtime")
+        _tokenizer, _model, _device = load_model()
+        _bot = ChatBot(_tokenizer, _model, device=_device)
+
+    return _bot
 
 
 # ===============================
@@ -26,9 +48,6 @@ app = Flask(__name__)
 
 @app.route("/health", methods=["GET"])
 def health():
-    """
-    Cek apakah server hidup
-    """
     return jsonify({
         "status": "ok",
         "service": "ai_runtime",
@@ -37,57 +56,75 @@ def health():
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    """
-    Input:
-    {
-        "text": "apa itu AI"
-    }
-    """
     start = time.time()
 
     if not request.is_json:
         return jsonify({"error": "Request harus JSON"}), 400
 
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     text = data.get("text", "").strip()
 
     if not text:
         return jsonify({"error": "Field 'text' kosong"}), 400
 
     try:
+        bot = get_bot()
         reply = bot.reply(text)
     except Exception as e:
-        log.error(f"Error inference: {e}")
+        log.exception("Error inference")
         return jsonify({"error": "Gagal memproses input"}), 500
 
     latency = round(time.time() - start, 3)
 
     return jsonify({
         "reply": reply,
-        "latency": latency
+        "latency": latency,
     })
 
 
 @app.route("/reset", methods=["POST"])
 def reset():
-    """
-    Reset memori percakapan
-    """
+    bot = get_bot()
     bot.reset()
     return jsonify({"status": "memory reset"})
 
 
-# ===============================
-# OPTIONAL: INFO MODEL
-# ===============================
 @app.route("/info", methods=["GET"])
 def info():
+    bot = get_bot()
+    model = bot.model
+
     return jsonify({
-        "model": model.__class__.__name__,
+        "model_class": model.__class__.__name__,
         "device": str(next(model.parameters()).device),
     })
 
+
+@app.route("/reload", methods=["POST"])
+def reload_model():
+    """
+    Paksa cek & reload model terbaru dari ai_factory
+    """
+    global _bot
+
+    updated = download_latest_model()
+    if updated:
+        load_model(force_reload=True)
+        _bot = None  # force recreate chatbot
+        return jsonify({"status": "model updated & reloaded"})
+
+    return jsonify({"status": "model already up-to-date"})
+
+
 @app.route("/", methods=["GET"])
 def index():
-    return render_template_string(index.html)
-
+    return jsonify({
+        "message": "AI Runtime Server",
+        "endpoints": [
+            "/health",
+            "/chat",
+            "/reset",
+            "/info",
+            "/reload",
+        ],
+    })
