@@ -1,0 +1,21 @@
+{
+  "name": "AI Chat Assistant",
+  "short_name": "AI Chat",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#075e54",
+  "theme_color": "#075e54",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/icon/Icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icon/Icon1.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
