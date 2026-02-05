@@ -89,5 +89,5 @@ def info():
 
 @app.route("/", methods=["GET"])
 def index():
-    return render_template_string(HTML_PAGE)
+    return render_template_string(index.html)
 
