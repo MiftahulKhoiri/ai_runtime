@@ -1,4 +1,5 @@
-const CACHE_NAME = "ai-chat-v1";
+const CACHE_NAME = "ai-chat-v2";
+
 const ASSETS = [
   "/",
   "/static/css/style.css",
@@ -6,6 +7,9 @@ const ASSETS = [
   "/static/json/manifest.json"
 ];
 
+// ===============================
+// INSTALL
+// ===============================
 self.addEventListener("install", event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
@@ -13,23 +17,40 @@ self.addEventListener("install", event => {
   self.skipWaiting();
 });
 
+// ===============================
+// ACTIVATE
+// ===============================
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter(k => k !== CACHE_NAME)
+          .map(k => caches.delete(k))
+      )
     )
   );
   self.clients.claim();
 });
 
+// ===============================
+// FETCH
+// ===============================
 self.addEventListener("fetch", event => {
   const req = event.request;
 
-  // API tetap online (jangan di-cache)
-  if (req.url.includes("/ask") || req.url.includes("/learn")) {
+  // ❌ JANGAN cache API runtime
+  if (
+    req.url.includes("/chat") ||
+    req.url.includes("/reset") ||
+    req.url.includes("/reload") ||
+    req.url.includes("/health") ||
+    req.url.includes("/info")
+  ) {
     return;
   }
 
+  // ✅ Cache-first untuk UI
   event.respondWith(
     caches.match(req).then(res => res || fetch(req))
   );
