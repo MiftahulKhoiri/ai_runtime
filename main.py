@@ -1,3 +1,4 @@
+from core.bootstrap import bootstrap
 bootstrap()
 
 """
@@ -17,7 +18,6 @@ import signal
 import sys
 import os
 
-from core.bootstrap import bootstrap
 from core.logger import get_logger
 
 log = get_logger("AI_RUNTIME_SERVER")
