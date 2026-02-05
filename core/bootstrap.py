@@ -1,3 +1,14 @@
+"""
+bootstrap.py
+Bootstrap resmi ai_runtime (production-ready)
+
+Tugas:
+- Pastikan virtualenv
+- Install dependency
+- Self update (opsional)
+- Sinkronisasi model dari ai_factory
+"""
+
 import os
 import sys
 import subprocess
@@ -33,7 +44,7 @@ def create_venv():
 
 def restart_in_venv():
     python_bin = VENV_DIR / "bin" / "python"
-    log.warning("Restarting aplikasi di dalam virtualenv...")
+    log.warning("Restart aplikasi di dalam virtualenv...")
     os.execv(str(python_bin), [str(python_bin)] + sys.argv)
 
 
@@ -41,16 +52,18 @@ def restart_in_venv():
 # REQUIREMENTS
 # ===============================
 def install_requirements():
-    log.info("Memastikan dependency terinstall...")
+    log.info("Memastikan dependency terinstall")
 
     pip_bin = VENV_DIR / "bin" / "pip"
-    subprocess.check_call([
-        str(pip_bin),
-        "install",
-        "--upgrade",
-        "-r",
-        str(REQ_FILE),
-    ])
+    subprocess.check_call(
+        [
+            str(pip_bin),
+            "install",
+            "--upgrade",
+            "-r",
+            str(REQ_FILE),
+        ]
+    )
 
     log.info("Dependency siap")
 
@@ -59,16 +72,18 @@ def install_requirements():
 # MODEL VALIDATION
 # ===============================
 def validate_model() -> bool:
+    """
+    Validasi minimum model HuggingFace
+    """
     if not MODEL_DIR.exists():
         return False
 
-    required = [
+    required_files = [
         "config.json",
         "pytorch_model.bin",
-        "tokenizer.json"
     ]
 
-    for f in required:
+    for f in required_files:
         if not (MODEL_DIR / f).exists():
             log.error(f"File model hilang: {f}")
             return False
@@ -80,9 +95,9 @@ def validate_model() -> bool:
 # BOOTSTRAP UTAMA
 # ===============================
 def bootstrap():
-    # ===============================
-    # 1. Pastikan venv
-    # ===============================
+    log.info("=== BOOTSTRAP AI_RUNTIME DIMULAI ===")
+
+    # 1️⃣ Pastikan virtualenv
     if not VENV_DIR.exists():
         create_venv()
         restart_in_venv()
@@ -90,24 +105,23 @@ def bootstrap():
     if not in_virtualenv():
         restart_in_venv()
 
-    # ===============================
-    # 2. Dependency
-    # ===============================
+    # 2️⃣ Dependency
     install_requirements()
 
-    # ===============================
-    # 3. Auto update (OPSIONAL)
-    # ===============================
+    # 3️⃣ Self update (opsional)
     updater = SelfUpdater(repo_dir=str(BASE_DIR))
     if updater.update_if_needed():
-        log.warning("Restart setelah update...")
-         restart_in_venv()
+        log.warning("Source code ter-update, restart runtime...")
+        restart_in_venv()
 
-    # ===============================
-    # 4. MODEL (PAKAI DOWNLOADER)
-    # ===============================
+    # 4️⃣ Model sync
     if not validate_model():
-        log.warning("Model belum ada / tidak valid, sinkronisasi dengan ai_factory...")
-        download_latest_model()
+        log.warning("Model belum ada / tidak valid, sinkronisasi dengan ai_factory")
+        updated = download_latest_model()
+        if not updated:
+            log.error("Model gagal disinkronisasi")
+            raise RuntimeError("Runtime tidak memiliki model valid")
     else:
         log.info("Model valid, siap inference")
+
+    log.info("=== BOOTSTRAP AI_RUNTIME SELESAI ===")
