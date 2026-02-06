@@ -15,11 +15,6 @@ import signal
 import sys
 import os
 
-from core.logger import get_logger
-from core.bootstrap import bootstrap
-
-log = get_logger("AI_RUNTIME_SERVER")
-
 # ===============================
 # PATH
 # ===============================
@@ -47,10 +42,17 @@ def get_local_ip():
 # SERVER RUNNER
 # ===============================
 def run():
-    log.info("=== MENJALANKAN AI RUNTIME SERVER ===")
+    # 🔴 IMPORT INTERNAL SETELAH BOOTSTRAP
+    from core.bootstrap import bootstrap
 
-    # 1️⃣ Bootstrap (venv, deps, model)
+    # 1️⃣ Bootstrap HARUS PALING AWAL
     bootstrap()
+
+    # 🔴 BARU import modul lain
+    from core.logger import get_logger
+
+    log = get_logger("AI_RUNTIME_SERVER")
+    log.info("=== MENJALANKAN AI RUNTIME SERVER ===")
 
     if not GUNICORN.exists():
         log.error("Gunicorn tidak ditemukan di virtualenv")
@@ -63,9 +65,9 @@ def run():
     # 2️⃣ Jalankan Gunicorn
     cmd = [
         str(GUNICORN),
-        "server.app:app",          # pastikan path benar
+        "server.app:app",
         "--bind", "0.0.0.0:5000",
-        "--workers", "1",          # Raspberry Pi → 1 worker
+        "--workers", "1",
         "--timeout", "120",
         "--log-level", "info",
     ]
@@ -90,7 +92,6 @@ def run():
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
 
-    # Tunggu Gunicorn
     proc.wait()
 
 
