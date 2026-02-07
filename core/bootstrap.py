@@ -15,7 +15,6 @@ import subprocess
 from pathlib import Path
 
 from core.logger import get_logger
-from core.model_downloader import download_latest_model
 from core.update import SelfUpdater
 
 log = get_logger("AI_RUNTIME_BOOTSTRAP")
